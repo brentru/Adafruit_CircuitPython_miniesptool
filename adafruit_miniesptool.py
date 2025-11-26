@@ -45,9 +45,9 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_miniesptool.git"
 SYNC_PACKET = b"\x07\x07\x12 UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU"
 ESP32_DATAREGVALUE = 0x15122500
 ESP8266_DATAREGVALUE = 0x00062000
-ESP32_C6_DATAREGVALUE = 0x2ce0806f
+ESP32_C6_DATAREGVALUE = 0x2CE0806F
 ESP8266_ESP32_REG_DATA = 0x60000078
-ESP32_C6_REG_DATA = 0x40001000 # from https://github.com/espressif/esptool-js/blob/main/src/esploader.ts
+ESP32_C6_REG_DATA = 0x40001000  # from https://github.com/espressif/esptool-js/blob/main/src/esploader.ts
 
 
 # Commands supported by ESP8266 ROM bootloader
@@ -207,7 +207,7 @@ class miniesptool:
             else:
                 # Check for ESP32-C6
                 datareg = self.read_register(ESP32_C6_REG_DATA)
-                if (datareg == ESP32_C6_DATAREGVALUE):
+                if datareg == ESP32_C6_DATAREGVALUE:
                     self._chipfamily = ESP32C6
         return self._chipfamily
 
@@ -267,7 +267,9 @@ class miniesptool:
         if self._chipfamily == ESP32 or self._chipfamily == ESP32C6:
             self.check_command(ESP_SPI_ATTACH, bytes([0] * 8))
             # We are hardcoded for 4MB flash on ESP32
-            buffer = struct.pack("<IIIIII", 0, self._flashsize, 0x10000, 4096, 256, 0xFFFF)
+            buffer = struct.pack(
+                "<IIIIII", 0, self._flashsize, 0x10000, 4096, 256, 0xFFFF
+            )
             self.check_command(ESP_SPI_SET_PARAMS, buffer)
 
         num_blocks = (size + self._flash_write_size - 1) // self._flash_write_size
@@ -279,16 +281,23 @@ class miniesptool:
         stamp = time.monotonic()
         if self._chipfamily == ESP32C6:
             # ESP32-C6 requires a 5th parameter (the encryption flag)
-            buffer = struct.pack("<IIIII", erase_size, num_blocks, self._flash_write_size, offset, 0)
+            buffer = struct.pack(
+                "<IIIII", erase_size, num_blocks, self._flash_write_size, offset, 0
+            )
         else:
-            buffer = struct.pack("<IIII", erase_size, num_blocks, self._flash_write_size, offset)
+            buffer = struct.pack(
+                "<IIII", erase_size, num_blocks, self._flash_write_size, offset
+            )
         print(
             "Erase size %d, num_blocks %d, size %d, offset 0x%04x"
             % (erase_size, num_blocks, self._flash_write_size, offset)
         )
         self.check_command(ESP_FLASH_BEGIN, buffer, timeout=timeout)
         if size != 0:
-            print("Took %.2fs to erase %d flash blocks" % (time.monotonic() - stamp, num_blocks))
+            print(
+                "Took %.2fs to erase %d flash blocks"
+                % (time.monotonic() - stamp, num_blocks)
+            )
         return num_blocks
 
     def check_command(self, opcode, buffer, checksum=0, timeout=0.1):
@@ -307,9 +316,9 @@ class miniesptool:
             raise RuntimeError("Didn't get enough status bytes")
         status = data[-status_len:]
         data = data[:-status_len]
-        #print("status", status)
-        #print("value", value)
-        #print("data", data)
+        # print("status", status)
+        # print("value", value)
+        # print("data", data)
         if status[0] != 0:
             raise RuntimeError("Command failure error code 0x%02x" % status[1])
         return (value, data)
@@ -457,9 +466,7 @@ class miniesptool:
         any hardware resetting"""
         self.send_command(0x08, SYNC_PACKET)
         for _ in range(8):
-            reply, data = self.get_response(  # noqa: F841
-                0x08, 0.1
-            )
+            reply, data = self.get_response(0x08, 0.1)  # noqa: F841
             if not data:
                 continue
             if len(data) > 1 and data[0] == 0 and data[1] == 0:

@@ -15,13 +15,15 @@ resetpin = board.ESP_RESET
 gpio0pin = board.I2S_IRQ
 
 uart = busio.UART(tx, rx, baudrate=115200, timeout=1)
-esptool = adafruit_miniesptool.miniesptool(uart, DigitalInOut(gpio0pin), DigitalInOut(resetpin), flashsize=4 * 1024 * 1024)
+esptool = adafruit_miniesptool.miniesptool(
+    uart, DigitalInOut(gpio0pin), DigitalInOut(resetpin), flashsize=4 * 1024 * 1024
+)
 esptool.sync()
 
 print("Synced")
 print("Found:", esptool.chip_name)
 if esptool.chip_name != "ESP32-C6":
-  raise RuntimeError("This example is for ESP32-C6 only")
+    raise RuntimeError("This example is for ESP32-C6 only")
 
 esptool.baudrate = 912600
 print("MAC ADDR: ", [hex(i) for i in esptool.mac_addr])
