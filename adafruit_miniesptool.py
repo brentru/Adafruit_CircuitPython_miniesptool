@@ -90,7 +90,8 @@ class miniesptool:
     when you have an ESP module wired to a board and need to upload new AT
     firmware. Its slow! Expect a few minutes when programming 1 MB flash."""
 
-    FLASH_WRITE_SIZE = 0x400
+    FLASH_WRITE_SIZE = 0x200
+    FLASH_WRITE_SIZE_C6 = 0x400
     FLASH_SECTOR_SIZE = 0x1000  # Flash sector size, minimum unit of erase.
     ESP_ROM_BAUD = 115200
 
@@ -114,6 +115,7 @@ class miniesptool:
         self._chipfamily = None
         self._chipname = None
         self._flashsize = flashsize
+        self._flash_write_size = self.FLASH_WRITE_SIZE
         # self._debug_led = DigitalInOut(board.D13)
         # self._debug_led.direction = Direction.OUTPUT
 
@@ -223,6 +225,7 @@ class miniesptool:
                 return "ESP8285"
             return "ESP8266EX"
         if self.chip_type == ESP32C6:
+            self._flash_write_size = self.FLASH_WRITE_SIZE_C6
             return "ESP32-C6"
         return None
 
@@ -267,7 +270,7 @@ class miniesptool:
             buffer = struct.pack("<IIIIII", 0, self._flashsize, 0x10000, 4096, 256, 0xFFFF)
             self.check_command(ESP_SPI_SET_PARAMS, buffer)
 
-        num_blocks = (size + self.FLASH_WRITE_SIZE - 1) // self.FLASH_WRITE_SIZE
+        num_blocks = (size + self._flash_write_size - 1) // self._flash_write_size
         if self._chipfamily == ESP8266:
             erase_size = self.get_erase_size(offset, size)
         else:
@@ -276,14 +279,13 @@ class miniesptool:
         stamp = time.monotonic()
         if self._chipfamily == ESP32C6:
             # ESP32-C6 requires a 5th parameter (the encryption flag)
-            buffer = struct.pack("<IIIII", erase_size, num_blocks, self.FLASH_WRITE_SIZE, offset, 0)
+            buffer = struct.pack("<IIIII", erase_size, num_blocks, self._flash_write_size, offset, 0)
         else:
-            buffer = struct.pack("<IIII", erase_size, num_blocks, self.FLASH_WRITE_SIZE, offset)
+            buffer = struct.pack("<IIII", erase_size, num_blocks, self._flash_write_size, offset)
         print(
             "Erase size %d, num_blocks %d, size %d, offset 0x%04x"
-            % (erase_size, num_blocks, self.FLASH_WRITE_SIZE, offset)
+            % (erase_size, num_blocks, self._flash_write_size, offset)
         )
-        print("Buffer: ", [hex(i) for i in buffer])
         self.check_command(ESP_FLASH_BEGIN, buffer, timeout=timeout)
         if size != 0:
             print("Took %.2fs to erase %d flash blocks" % (time.monotonic() - stamp, num_blocks))
@@ -430,15 +432,15 @@ class miniesptool:
                     print(
                         "\rWriting at 0x%08x... (%d %%)"
                         % (
-                            address + seq * self.FLASH_WRITE_SIZE,
+                            address + seq * self._flash_write_size,
                             100 * (seq + 1) // blocks,
                         ),
                         end="",
                     )
                     last_print = time.monotonic()
-                block = file.read(self.FLASH_WRITE_SIZE)
+                block = file.read(self._flash_write_size)
                 # Pad the last block
-                block = block + b"\xff" * (self.FLASH_WRITE_SIZE - len(block))
+                block = block + b"\xff" * (self._flash_write_size - len(block))
                 # print(block)
                 self.flash_block(block, seq, timeout=2)
                 seq += 1
