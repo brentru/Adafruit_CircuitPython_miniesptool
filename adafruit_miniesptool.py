@@ -266,7 +266,7 @@ class miniesptool:
     def flash_begin(self, *, size=0, offset=0):
         """Prepare for flashing by attaching SPI chip and erasing the
         number of blocks requred."""
-        if self._chipfamily in (ESP32, ESP32C6):
+        if self._chipfamily in {ESP32, ESP32C6}:
             self.check_command(ESP_SPI_ATTACH, bytes([0] * 8))
             # We are hardcoded for 4MB flash on ESP32
             buffer = struct.pack("<IIIIII", 0, self._flashsize, 0x10000, 4096, 256, 0xFFFF)

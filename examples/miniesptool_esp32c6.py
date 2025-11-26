@@ -1,9 +1,11 @@
 # SPDX-FileCopyrightText: 2025 Brent Rubell for Adafruit Industries
 # SPDX-License-Identifier: MIT
 import time
+
 import board
 import busio
 from digitalio import DigitalInOut, Direction
+
 import adafruit_miniesptool
 
 print("ESP32-C6 Nina-FW Loader")
