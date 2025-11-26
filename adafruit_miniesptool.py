@@ -47,7 +47,9 @@ ESP32_DATAREGVALUE = 0x15122500
 ESP8266_DATAREGVALUE = 0x00062000
 ESP32_C6_DATAREGVALUE = 0x2CE0806F
 ESP8266_ESP32_REG_DATA = 0x60000078
-ESP32_C6_REG_DATA = 0x40001000  # from https://github.com/espressif/esptool-js/blob/main/src/esploader.ts
+ESP32_C6_REG_DATA = (
+    0x40001000  # from https://github.com/espressif/esptool-js/blob/main/src/esploader.ts
+)
 
 
 # Commands supported by ESP8266 ROM bootloader
@@ -267,9 +269,7 @@ class miniesptool:
         if self._chipfamily in (ESP32, ESP32C6):
             self.check_command(ESP_SPI_ATTACH, bytes([0] * 8))
             # We are hardcoded for 4MB flash on ESP32
-            buffer = struct.pack(
-                "<IIIIII", 0, self._flashsize, 0x10000, 4096, 256, 0xFFFF
-            )
+            buffer = struct.pack("<IIIIII", 0, self._flashsize, 0x10000, 4096, 256, 0xFFFF)
             self.check_command(ESP_SPI_SET_PARAMS, buffer)
 
         num_blocks = (size + self._flash_write_size - 1) // self._flash_write_size
@@ -285,19 +285,14 @@ class miniesptool:
                 "<IIIII", erase_size, num_blocks, self._flash_write_size, offset, 0
             )
         else:
-            buffer = struct.pack(
-                "<IIII", erase_size, num_blocks, self._flash_write_size, offset
-            )
+            buffer = struct.pack("<IIII", erase_size, num_blocks, self._flash_write_size, offset)
         print(
             "Erase size %d, num_blocks %d, size %d, offset 0x%04x"
             % (erase_size, num_blocks, self._flash_write_size, offset)
         )
         self.check_command(ESP_FLASH_BEGIN, buffer, timeout=timeout)
         if size != 0:
-            print(
-                "Took %.2fs to erase %d flash blocks"
-                % (time.monotonic() - stamp, num_blocks)
-            )
+            print("Took %.2fs to erase %d flash blocks" % (time.monotonic() - stamp, num_blocks))
         return num_blocks
 
     def check_command(self, opcode, buffer, checksum=0, timeout=0.1):
